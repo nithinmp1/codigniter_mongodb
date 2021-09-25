@@ -5,14 +5,35 @@ class Register extends CI_Controller {
 	function __construct() {
 		parent::__construct();
 		$this->load->model('Register_model');	
+		$this->load->library('mongo_db',['activate'=>'default'],'mongo_db');
 	}
 	public function index(){
+		$data['test'] = $this->mongo_db->select(array('name', '_id'))->get('roles');
+		// echo "<pre>";print_r($data['test']);die;
 		$this->load->view('home');
 	}
 	public function register_employee(){
 		$this->load->view('register');
 	}
-	public function save_employee(){
+	function save_employee(){
+		$insert= $this->mongo_db->insert('employee', $data = array(
+			'name' 		=> $this->input->post('name'),
+            'email' 	=> $this->input->post('email'),
+            'phone' 	=> $this->input->post('phone'),
+            'address' 	=> $this->input->post('address')
+		));
+
+		if ($insert) {
+			$response['error']=false;
+			$response['message']='Register successfully';
+		}else{
+			$response['error']=true;
+			$response['message']='Some error occurs';
+		}
+		echo json_encode($response);exit;
+	}
+
+	public function save_employeeMysql(){
 		$response=array();
 		$data = array(
             'name' 		=> $this->input->post('name'),
@@ -34,7 +55,21 @@ class Register extends CI_Controller {
 	public function login(){
 		$this->load->view('login');
 	}
-	public function login_validate($id){
+	function login_validate($emailId="nithin@trawex.com"){
+		$emailId="nithin@trawex.com";
+		$emp = $this->mongo_db->get_where('employee',array('email' => $emailId));
+		if ($emp) {
+			$response['error']=false;
+			$response['message']=(object)$emp[0];
+		}else{
+			$response['error']=true;
+			$response['message']='Invalid Id';
+		}
+		echo json_encode($response);exit;
+
+	}
+
+	public function login_validateMysql($id){
 		if ($id) {
 			$data=$this->Register_model->login_validate($id);
 			if ($data) {
